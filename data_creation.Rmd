@@ -73,7 +73,7 @@ pca1 <- prcomp(std, center=FALSE, scale.=FALSE, rank. = 4) # stats::
 # save them into a new dataframe that can be used in the kmeans algorithm
 results <- pca1$x
 results <- as.data.frame(results)
-write_csv(results, "PCAdata.csv")
+write_csv(results, "PCA_last.csv")
 ```
 
 Import PCA data into python and perform clustering on that.
