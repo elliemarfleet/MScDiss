@@ -14,7 +14,7 @@ installed on a computer you have access to:
 -   R packages, which can be installed by opening RStudio and typing
     `install.packages("tidyverse")` in the R console, for example.
 -   To produce any maps made as part of the analysis, QGIS will be needed which is downloadable from [here](https://qgis.org/en/site/forusers/download.html).
--   Python is required for `.ipynb' (jupyter notebook) files to be ran
+-   Python is required for `.ipynb` (jupyter notebook) files to be ran
 
 
 # Process
