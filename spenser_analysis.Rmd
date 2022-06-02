@@ -47,7 +47,7 @@ colnames(agg_house) <- c("Area","households")
 msoa2 <- merge(agg_house, agg_msoa, by = "Area")
 ```
 
-
+## Age counts
 
 ```{r}
 # msoa level data on age 
