@@ -11,19 +11,20 @@ output: html_document
 # load in the data file 
 library(readr)
 
+# load individual data, and vehicle data
 data <- read_csv("data.csv")
 vehicles <- read_csv("vehicles.csv")
 
-# from vehicle extract the vehicle age, annual mileage and co2 emissions
+# from vehicle extract the vehicle age, annual mileage and co2 emissions, and join with individual data
 data2 <- merge(x = data, y = vehicles[ , c("IndividualID", "VehAge_B01ID", "VehCO2Tax2008_B01ID",    "VehAnMileage_B01ID", "VehWeekMileage_B01ID", "VehComMile_B01ID")], by = "IndividualID", all.x=TRUE)
 
-# impute the NAs with 0 
+# impute the NAs with 0 (non-car owners)
 data2[is.na(data2)] <- 0
 
 # check
 sum(is.na(data2))
 
-# data2 contains the joined 7000 entries, no missing values
+# data2 contains the joined 7000+ entries, no missing values
 write_csv(data2, "raw.csv")
 ```
 
