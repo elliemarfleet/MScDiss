@@ -1,0 +1,110 @@
+---
+title: "ipf"
+author: '201097431'
+date: '2022-05-19'
+output: html_document
+---
+
+## IPF 
+
+### Sort the aggregated data into the right format
+### creating the age and sex constraints
+
+```{r}
+# load the 'names' data 
+ind2 <- read.csv("names.csv") 
+cons2 <- read.csv("ass_E08000035_MSOA11_2020.csv") 
+
+# select just columns 3 and 4 of cons2 (the sex variables)
+cons2 <- cons2[c(3,4)]
+
+# recode sex 
+cons2$DC1117EW_C_SEX[cons2$DC1117EW_C_SEX==1] <- 'Male'
+cons2$DC1117EW_C_SEX[cons2$DC1117EW_C_SEX==2] <- 'Female'
+
+library(dplyr)
+# separate into age groups
+cons2 <- cons2 %>% mutate(agegroup = case_when(DC1117EW_C_AGE >= 40 ~ 'Over 40',
+                                             DC1117EW_C_AGE < 40 ~ 'Under 40'))
+# get counts
+# get the age group counts
+cons <- data.frame(table(cons2$agegroup))
+
+# get the sex counts
+consS <- data.frame(table(cons2$DC1117EW_C_SEX))
+
+# combined, these formulate the leeds constraints (the aggregated actual counts of these groups in Leeds)
+```
+
+
+### adapt the individual level data to the right format
+
+```{r}
+# import the leeds constraints data 
+library(readr)
+leeds <- read_csv("leeds_cons.csv")
+```
+
+```{r}
+# change 1 and 2 to male and female in the individual level data 
+ind2$Sex_B01ID[ind2$Sex_B01ID==1] <- 'Male'
+ind2$Sex_B01ID[ind2$Sex_B01ID==2] <- 'Female'
+```
+
+```{r}
+# get the leeds LA responses
+ind2 <- subset(ind2, HHoldOSLAUA_B01ID=="E08000035")
+
+# this extracts the 122 rows that are relative to Leeds LA
+# get just age, sex 
+ind <- ind2[c("Age", "Sex_B01ID", "Cluster")]
+
+# split into 2 age groups
+ind <- ind %>% mutate(agegroup = case_when(Age >= 40 ~ 'Over 40',
+                                             Age < 40 ~ 'Under 40'))
+
+# create the category array
+ind.cat <- array(0,dim=c(nrow(ind), ncol(leeds)))
+
+# re-categorise the variables
+ind.cat[which(ind$agegroup == "Over 40"),1] <- 1 # Age, "40+"
+ind.cat[which(ind$agegroup == "Under 40"),2] <- 1 # "<40"
+ind.cat[which(ind$Sex_B01ID =="Male"),3] <- 1 # Sex constraint: "m" 
+ind.cat[which(ind$Sex_B01ID =="Female"),4] <- 1 #"f"
+sum(ind.cat) 
+
+# Polishing up
+ind.cat <- data.frame(ind.cat)
+names(ind.cat) <- names(leeds)
+
+# get counts
+ind_age <- data.frame(table(ind$agegroup))
+ind_sex <- data.frame(table(ind$Sex_B01ID))
+
+# these totals were combined in excel in the file ind_IPF.csv
+# import the file 
+clusters <- read_csv("ind_IPF.csv")
+```
+
+### Weightings and fitting
+
+```{r}
+# create weight object and aggregated individual-level data
+weights <- array(1, dim=c(nrow(ind),nrow(leeds))) 
+ind.agg <- matrix (rep(colSums (ind.cat) , nrow (leeds)) , nrow (leeds), byrow = T )
+```
+
+```{r}
+# separate leeds into constraint 1 and constraint 2
+c1 <- leeds[c(1,2)]
+c2 <- leeds[c(3,4)]
+
+# calculate new weights
+for ( j in 1: nrow(leeds)){
+for( i in 1: ncol(c1)){
+weights[which(ind.cat[ , i] == 1),j] <- c1[j,i] / ind.agg [j,i]}}
+```
+
+
+
+
