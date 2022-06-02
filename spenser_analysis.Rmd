@@ -1,0 +1,76 @@
+---
+title: "cars"
+author: '201097431'
+date: '2022-05-23'
+output: html_document
+---
+
+## Car counts 
+
+```{r}
+# read in the spenser data
+library(readr)
+cars <- read_csv("cars_leeds.csv")
+
+# change 1 to 0 as 1 means no car/van
+cars$LC4202_C_CARSNO[cars$LC4202_C_CARSNO==1] <- 0
+cars$LC4202_C_CARSNO[cars$LC4202_C_CARSNO==2] <- 1
+cars$LC4202_C_CARSNO[cars$LC4202_C_CARSNO==3] <- 2
+
+# aggregate to get counts of cars in each OA
+agg_cars <- aggregate(cars$LC4202_C_CARSNO, by=list(Area=cars$Area), FUN=sum)
+
+library(plyr)
+households <- count(cars, "Area")
+
+# join households to agg_cars
+m <- merge(agg_cars, households, by = "Area")
+colnames(m) <- c("OA11CD","cars", "households")
+```
+
+```{r}
+# get msoa level data
+# read in lookup table 
+lookup <- read_csv("lookup.csv")
+
+# join on OA11CD
+msoa <- merge(m, lookup, by = "OA11CD")
+
+# groupby MSOA for cars count per msoa
+agg_msoa <- aggregate(msoa$cars, by=list(Area=msoa$MSOA11CD), FUN=sum)
+
+# household counts per msoa
+agg_house <- aggregate(msoa$households, by=list(Area=msoa$MSOA11CD), FUN=sum)
+colnames(agg_house) <- c("Area","households")
+
+# merge with cars data
+msoa2 <- merge(agg_house, agg_msoa, by = "Area")
+```
+
+
+
+```{r}
+# msoa level data on age 
+
+# read in individual level data
+age <- read.csv("ass_E08000035_MSOA11_2020.csv") 
+
+library(dplyr)
+
+# create age group breaks
+age <- age %>% mutate(agegroup = case_when(DC1117EW_C_AGE >= 40  & DC1117EW_C_AGE <= 49 ~ '40 - 49',
+                                             DC1117EW_C_AGE >= 30  & DC1117EW_C_AGE <= 39 ~ '30 -39',
+                                             DC1117EW_C_AGE >= 20  & DC1117EW_C_AGE <= 29 ~ '20 - 29',
+                                           DC1117EW_C_AGE >= 0  & DC1117EW_C_AGE <= 19 ~ '0 - 19',
+                                           DC1117EW_C_AGE >= 50 & DC1117EW_C_AGE <= 86 ~ '50+'))
+
+one_hot = age[]
+
+# groupby area
+save <- age %>%
+  count(Area, agegroup)
+
+write_csv(save, "agegroups.csv")
+
+```
+
