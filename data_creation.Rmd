@@ -1,0 +1,77 @@
+---
+title: "f"
+author: '201097431'
+date: '2022-05-13'
+output: html_document
+---
+
+# Create raw data file 
+
+```{r}
+# load in the data file 
+library(readr)
+
+data <- read_csv("data.csv")
+vehicles <- read_csv("vehicles.csv")
+
+# from vehicle extract the vehicle age, annual mileage and co2 emissions
+data2 <- merge(x = data, y = vehicles[ , c("IndividualID", "VehAge_B01ID", "VehCO2Tax2008_B01ID",    "VehAnMileage_B01ID", "VehWeekMileage_B01ID", "VehComMile_B01ID")], by = "IndividualID", all.x=TRUE)
+
+# impute the NAs with 0 
+data2[is.na(data2)] <- 0
+
+# check
+sum(is.na(data2))
+
+# data2 contains the joined 7000 entries, no missing values
+write_csv(data2, "raw.csv")
+```
+
+
+# Create standardised data file
+
+```{r}
+# drop the columns that don't need to be standardised
+data3 <- data2[-c(1,2,3,11)]
+            
+# standardise
+data3 <- scale(data3)
+
+# convert
+data3 <- as.data.frame(data3)
+
+# extract for clustering
+write_csv(data3, "standardised.csv")
+```
+
+# Create PCA version
+
+```{r}
+library(factoextra)
+pca1 <- prcomp(std, center=FALSE, scale.=FALSE)
+
+# table of eigenvalues
+eig.val <- get_eigenvalue(pca1)
+eig.val
+
+library(paran)
+paran(std, iterations=10, quietly=FALSE,
+    status=TRUE, all=TRUE, cfa=FALSE, graph=TRUE,
+    color=TRUE, col=c("black","red","blue"),
+    lty=c(1,2,3), lwd=1, legend=TRUE, file="",
+    width=640, height=640, grdevice="png", seed=0, mat=NA, n=NA)
+
+# specify 4 PCs and save
+pca1 <- prcomp(std, center=FALSE, scale.=FALSE, rank. = 4) # stats::
+
+# save them into a new dataframe that can be used in the kmeans algorithm
+results <- pca1$x
+
+# extract the results to run the kmeans in python
+results <- as.data.frame(results)
+
+write_csv(results, "PCAdata.csv")
+```
+
+Import PCA data into python and perform clustering on that.
+
